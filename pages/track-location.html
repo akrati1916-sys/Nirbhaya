@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Track Location</title>
+
+    
+    
+    <!-- Your CSS -->
+    <link rel="stylesheet" href="../css/track-location.css">
+</head>
+
+<body>
+
+    <div class="track-page">
+
+        <h1>Track Location</h1>
+
+        <!-- Authentication Section -->
+        <div class="authentication-box" id="authentication">
+
+            <h2>Verify User</h2>
+
+            <input
+                type="email"
+                id="email"
+                placeholder="Enter Email"
+            >
+
+            <input
+                type="text"
+                id="aadhaar"
+                placeholder="Enter Aadhaar Number"
+            >
+
+            <button id="verifyButton">
+                Verify & Track
+            </button>
+
+            <p id="error"></p>
+
+        </div>
+
+
+       <div class="map-section" id="mapSection">
+
+    <h2>Access Verified</h2>
+
+    <div id="locationBox">
+        <p>Tracked User Location</p>
+
+        <p>
+            Latitude:
+            <span id="latitude"></span>
+        </p>
+
+        <p>
+            Longitude:
+            <span id="longitude"></span>
+        </p>
+    </div>
+
+    <div class="map-container">
+        <iframe
+            id="locationMap"
+            src=""
+            loading="lazy">
+        </iframe>
+    </div>
+
+</div>
+
+    
+<script src="../js/track-loaction.js"></script>
+
+</body>
+</html>
