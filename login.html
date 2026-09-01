@@ -7,8 +7,8 @@
 
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <link rel="stylesheet" href="../css/auth.css">
-    <link rel="stylesheet" href="../css/global.css">
+    <link rel="stylesheet" href="/css/auth.css">
+    <link rel="stylesheet" href="/css/global.css">
 
     <title>NIRBHAYA - Login</title>
 
@@ -432,7 +432,7 @@
 
                 alert("🔓 CAPTCHA Verified Successfully!\n\nYour account has been verified. Logging you in automatically...");
                 closeCaptchaModal();
-                window.location.href = "../security.html";
+                window.location.href = "dashboard.html";
             } else {
                 alert("❌ Incorrect verification code. Please try again.");
                 generatedCaptcha = Math.floor(1000 + Math.random() * 9000).toString();
