@@ -61,7 +61,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             // Redirect to security dashboard
-            window.location.href = '../security.html';
+            window.location.href = '../dashboard.html';
         });
     }
 });
