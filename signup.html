@@ -13,6 +13,9 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700&display=swap" rel="stylesheet">
 
+    <!-- Supabase JS Client CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
     <style>
         body {
             font-family: 'Poppins', sans-serif;
@@ -477,8 +480,13 @@
         </div>
     </div>
 
-    <!-- Script for Strict Signup & Validation Flow -->
+    <!-- Script for Strict Signup & Supabase Integration Flow -->
     <script>
+        // Initialize Supabase Client
+        const supabaseUrl = 'https://qrufisohvrceqappvhye.supabase.co';
+        const supabaseKey = 'sb_publishable_ROZgpJvsMd2Qg-Bm5PVCwg_MiV1aBQG';
+        const _supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+
         const hideTimers = {};
 
         function togglePasswordVisibility(fieldId, iconElement) {
@@ -506,8 +514,8 @@
             }
         }
 
-        // Official Signup Handling Logic
-        function handleSignup(event) {
+        // Official Signup Handling Logic with Supabase Database Integration
+        async function handleSignup(event) {
             event.preventDefault();
 
             const name = document.getElementById('name').value.trim();
@@ -544,32 +552,60 @@
                 return;
             }
 
-            // Fetch existing users database
-            let users = JSON.parse(localStorage.getItem('nirbhaya_signup_users')) || [];
+            try {
+                // Check if email already registered in Supabase
+                const { data: existingUsers, error: checkError } = await _supabase
+                    .from('users')
+                    .select('*')
+                    .eq('email', email);
 
-            // Check if email already registered
-            const existingUser = users.find(u => u.email.toLowerCase() === email);
-            if (existingUser) {
-                alert("⚠️ An account with this email already exists! Please log in instead.");
-                window.location.href = "login.html";
-                return;
+                if (checkError) {
+                    console.error('Error checking user existence:', checkError.message);
+                    alert("⚠️ Database error occurred. Please try again.");
+                    return;
+                }
+
+                if (existingUsers && existingUsers.length > 0) {
+                    alert("⚠️ An account with this email already exists! Please log in instead.");
+                    window.location.href = "login.html";
+                    return;
+                }
+
+                // Insert new user record into Supabase database table 'users'
+                const { error: insertError } = await _supabase
+                    .from('users')
+                    .insert([
+                        { 
+                            email: email, 
+                            password: password 
+                        }
+                    ]);
+
+                if (insertError) {
+                    console.error('Supabase insert error:', insertError.message);
+                    alert("❌ Failed to save account to database: " + insertError.message);
+                    return;
+                }
+
+                // Fallback / Backup local storage database entry
+                let users = JSON.parse(localStorage.getItem('nirbhaya_signup_users')) || [];
+                const newUser = {
+                    name: name,
+                    email: email,
+                    phone: phone,
+                    password: password,
+                    dp: "" 
+                };
+                users.push(newUser);
+                localStorage.setItem('nirbhaya_signup_users', JSON.stringify(users));
+
+                alert(`✅ Account Created Successfully for ${name}!\n\nPlease log in using your credentials.`);
+                window.location.href = "login.html"; // Redirects to login page after signup
+
+            } catch (err) {
+                console.error('Unexpected error during signup:', err);
+                alert("❌ An unexpected error occurred. Please try again.");
             }
-
-            // Create new user record (Without forced shared DP)
-            const newUser = {
-                name: name,
-                email: email,
-                phone: phone,
-                password: password,
-                dp: "" // Starts empty so user gets their own profile or default avatar
-            };
-
-            // Save back to localStorage database
-            users.push(newUser);
-            localStorage.setItem('nirbhaya_signup_users', JSON.stringify(users));
-
-            alert(`✅ Account Created Successfully for ${name}!\n\nPlease log in using your credentials.`);
-            window.location.href = "login.html"; // Redirects to login page after signup
         }
 
         function openTermsModal(event) {
