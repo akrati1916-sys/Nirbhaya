@@ -12,6 +12,9 @@
 
     <title>NIRBHAYA - Login</title>
 
+    <!-- Supabase JS Client CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
     <style>
         /* Login Container */
         .login-container {
@@ -315,8 +318,13 @@
     </div>
 
 
-    <!-- Script for Official Validation & Isolated Authentication -->
+    <!-- Script for Official Validation & Supabase Authentication Integration -->
     <script>
+        // Initialize Supabase Client
+        const supabaseUrl = 'https://qrufisohvrceqappvhye.supabase.co';
+        const supabaseKey = 'sb_publishable_ROZgpJvsMd2Qg-Bm5PVCwg_MiV1a...'; // Replace with your actual publishable key if needed
+        const _supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+
         // Password Visibility Toggle
         const togglePassword = document.getElementById('togglePassword');
         const passwordInput = document.getElementById('password');
@@ -329,8 +337,8 @@
             });
         }
 
-        // Official Login Action with Strict Validation
-        function handleLogin() {
+        // Official Login Action with Strict Validation & Supabase Check
+        async function handleLogin() {
             const emailInput = document.getElementById('email');
             const passwordInput = document.getElementById('password');
 
@@ -351,34 +359,49 @@
                 return;
             }
 
-            // Retrieve registered users database from localStorage
-            let users = JSON.parse(localStorage.getItem('nirbhaya_signup_users')) || [];
+            // Check Supabase database for matching user
+            try {
+                const { data: users, error } = await _supabase
+                    .from('users')
+                    .select('*')
+                    .eq('email', email)
+                    .eq('password', password);
 
-            // Find user matching email and password
-            const foundUser = users.find(u => u.email.toLowerCase() === email && u.password === password);
+                if (error) {
+                    console.error('Supabase error:', error.message);
+                    alert("❌ Database connection error. Please try again later.");
+                    return;
+                }
 
-            if (!foundUser) {
-                alert("❌ Authentication Failed: Account not found or incorrect credentials!\n\nPlease check your email/password or sign up first.");
-                return;
+                if (!users || users.length === 0) {
+                    alert("❌ Authentication Failed: Account not found or incorrect credentials!\n\nPlease check your email/password or sign up first.");
+                    return;
+                }
+
+                const foundUser = users[0];
+
+                // Set current active session user parameters (Isolated profiles)
+                localStorage.setItem('nirbhaya_current_user_email', foundUser.email);
+                localStorage.setItem('nirbhaya_username', foundUser.name || 'User');
+                if (foundUser.dp) {
+                    localStorage.setItem('nirbhaya_userdp', foundUser.dp);
+                } else {
+                    localStorage.removeItem('nirbhaya_userdp');
+                }
+
+                alert(`✅ Welcome back, ${foundUser.name || 'User'}!\n\nLogin Successful. Redirecting to Dashboard...`);
+                window.location.href = "../security.html";
+
+            } catch (err) {
+                console.error('Unexpected error:', err);
+                alert("❌ An unexpected error occurred during login.");
             }
-
-            // Set current active session user parameters (Isolated profiles)
-            localStorage.setItem('nirbhaya_current_user_email', foundUser.email);
-            localStorage.setItem('nirbhaya_username', foundUser.name);
-            if (foundUser.dp) {
-                localStorage.setItem('nirbhaya_userdp', foundUser.dp);
-            } else {
-                localStorage.removeItem('nirbhaya_userdp');
-            }
-
-            alert(`✅ Welcome back, ${foundUser.name}!\n\nLogin Successful. Redirecting to Dashboard...`);
-            window.location.href = "../security.html";
         }
 
         // Forgot Password CAPTCHA Modal Logic
         let generatedCaptcha = "";
 
-        function openCaptchaModal(event) {
+        async function openCaptchaModal(event) {
             event.preventDefault();
 
             const email = document.getElementById('email').value.trim().toLowerCase();
@@ -390,26 +413,33 @@
                 return;
             }
 
-            let users = JSON.parse(localStorage.getItem('nirbhaya_signup_users')) || [];
-            const userExists = users.some(u => u.email.toLowerCase() === email);
+            try {
+                const { data: users, error } = await _supabase
+                    .from('users')
+                    .select('*')
+                    .eq('email', email);
 
-            if (!userExists) {
-                alert("❌ No account found with this email address. Please sign up first.");
-                return;
+                if (error || !users || users.length === 0) {
+                    alert("❌ No account found with this email address. Please sign up first.");
+                    return;
+                }
+
+                generatedCaptcha = Math.floor(1000 + Math.random() * 9000).toString();
+                document.getElementById('captchaCodeText').textContent = generatedCaptcha;
+                document.getElementById('captchaUserInput').value = "";
+
+                document.getElementById('captchaModal').style.display = 'flex';
+            } catch (err) {
+                console.error('Error checking user:', err);
+                alert("❌ Error verifying email address.");
             }
-
-            generatedCaptcha = Math.floor(1000 + Math.random() * 9000).toString();
-            document.getElementById('captchaCodeText').textContent = generatedCaptcha;
-            document.getElementById('captchaUserInput').value = "";
-
-            document.getElementById('captchaModal').style.display = 'flex';
         }
 
         function closeCaptchaModal() {
             document.getElementById('captchaModal').style.display = 'none';
         }
 
-        function verifyAndLogin() {
+        async function verifyAndLogin() {
             const userInputValue = document.getElementById('captchaUserInput').value.trim();
             const email = document.getElementById('email').value.trim().toLowerCase();
 
@@ -419,20 +449,28 @@
             }
 
             if (userInputValue === generatedCaptcha) {
-                let users = JSON.parse(localStorage.getItem('nirbhaya_signup_users')) || [];
-                const foundUser = users.find(u => u.email.toLowerCase() === email);
+                try {
+                    const { data: users, error } = await _supabase
+                        .from('users')
+                        .select('*')
+                        .eq('email', email);
 
-                if (foundUser) {
-                    localStorage.setItem('nirbhaya_current_user_email', foundUser.email);
-                    localStorage.setItem('nirbhaya_username', foundUser.name);
-                    if (foundUser.dp) {
-                        localStorage.setItem('nirbhaya_userdp', foundUser.dp);
+                    if (!error && users && users.length > 0) {
+                        const foundUser = users[0];
+                        localStorage.setItem('nirbhaya_current_user_email', foundUser.email);
+                        localStorage.setItem('nirbhaya_username', foundUser.name || 'User');
+                        if (foundUser.dp) {
+                            localStorage.setItem('nirbhaya_userdp', foundUser.dp);
+                        }
                     }
-                }
 
-                alert("🔓 CAPTCHA Verified Successfully!\n\nYour account has been verified. Logging you in automatically...");
-                closeCaptchaModal();
-                window.location.href = "dashboard.html";
+                    alert("🔓 CAPTCHA Verified Successfully!\n\nYour account has been verified. Logging you in automatically...");
+                    closeCaptchaModal();
+                    window.location.href = "dashboard.html";
+                } catch (err) {
+                    console.error('Error during captcha validation login:', err);
+                    alert("❌ Error completing login process.");
+                }
             } else {
                 alert("❌ Incorrect verification code. Please try again.");
                 generatedCaptcha = Math.floor(1000 + Math.random() * 9000).toString();

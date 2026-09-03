@@ -2,13 +2,18 @@
 
 document.addEventListener("DOMContentLoaded", () => {
 
+    // Initialize Supabase Client
+    const supabaseUrl = 'https://qrufisohvrceqappvhye.supabase.co';
+    const supabaseKey = 'sb_publishable_ROZgpJvsMd2Qg-Bm5PVCwg_MiV1aBQG';
+    const _supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+
     const loginBtn = document.getElementById("loginBtn");
 
     if (!loginBtn) {
         return;
     }
 
-    loginBtn.addEventListener("click", function (e) {
+    loginBtn.addEventListener("click", async function (e) {
 
         e.preventDefault();
 
@@ -29,76 +34,67 @@ document.addEventListener("DOMContentLoaded", () => {
             return;
         }
 
-        // Get registered users from localStorage
-        const usersJSON = localStorage.getItem("nirbhaya_signup_users");
-
-        if (!usersJSON) {
-            alert("No account found. Please Sign Up first.");
-            return;
-        }
-
-        let users;
-
         try {
-            users = JSON.parse(usersJSON);
-        } catch (error) {
-            alert("Something went wrong with the account data.");
-            return;
-        }
+            // Fetch matching user from Supabase database table 'users'
+            const { data: users, error } = await _supabase
+                .from("users")
+                .select("*")
+                .eq("email", emailInput);
 
-        // Find matching user
-        const foundUser = users.find(
-            user =>
-                user.email.toLowerCase() === emailInput &&
-                user.password === passwordInput
-        );
-
-        // Login failed
-        if (!foundUser) {
-
-            const emailExists = users.some(
-                user => user.email.toLowerCase() === emailInput
-            );
-
-            if (!emailExists) {
-                alert("No account found with this email. Please Sign Up first.");
-            } else {
-                alert("Incorrect password! Please try again.");
+            if (error) {
+                console.error("Supabase error:", error.message);
+                alert("Something went wrong with the database connection.");
+                return;
             }
 
-            return;
-        }
+            if (!users || users.length === 0) {
+                alert("No account found with this email. Please Sign Up first.");
+                return;
+            }
 
-        // Login successful
-        alert("✅ Login Successful!");
+            const foundUser = users[0];
 
-        // Save logged-in user information
-        localStorage.setItem(
-            "nirbhaya_current_user_email",
-            foundUser.email
-        );
+            // Check if password matches
+            if (foundUser.password !== passwordInput) {
+                alert("Incorrect password! Please try again.");
+                return;
+            }
 
-        localStorage.setItem(
-            "nirbhaya_username",
-            foundUser.name
-        );
+            // Login successful
+            alert("✅ Login Successful!");
 
-        localStorage.setItem(
-            "nirbhaya_user_email",
-            foundUser.email
-        );
-
-        // Save profile picture if available
-        if (foundUser.dp && foundUser.dp.trim() !== "") {
+            // Save logged-in user information
             localStorage.setItem(
-                "nirbhaya_userdp",
-                foundUser.dp
+                "nirbhaya_current_user_email",
+                foundUser.email
             );
-        } else {
-            localStorage.removeItem("nirbhaya_userdp");
-        }
 
-        // ⭐ OPEN DASHBOARD AFTER LOGIN
-        window.location.href = "dashboard.html";
+            localStorage.setItem(
+                "nirbhaya_username",
+                foundUser.name || "User"
+            );
+
+            localStorage.setItem(
+                "nirbhaya_user_email",
+                foundUser.email
+            );
+
+            // Save profile picture if available
+            if (foundUser.dp && foundUser.dp.trim() !== "") {
+                localStorage.setItem(
+                    "nirbhaya_userdp",
+                    foundUser.dp
+                );
+            } else {
+                localStorage.removeItem("nirbhaya_userdp");
+            }
+
+            // ⭐ OPEN DASHBOARD AFTER LOGIN
+            window.location.href = "dashboard.html";
+
+        } catch (err) {
+            console.error("Unexpected error during login:", err);
+            alert("An unexpected error occurred. Please try again.");
+        }
     });
 });
