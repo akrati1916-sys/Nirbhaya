@@ -37,7 +37,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (checkError) {
                 console.error('Error checking user existence:', checkError.message);
-                alert('Database error. Please try again.');
+                alert('Database error: ' + checkError.message);
                 return;
             }
 
@@ -46,13 +46,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
-            // Insert new user into Supabase database table 'users'
-            // Note: Make sure your Supabase table columns are named 'email', 'password', etc.
+            // Insert new user into Supabase database table 'users' with all fields
             const { error: insertError } = await _supabase
                 .from('users')
                 .insert([
                     { 
+                        fullName: fullName,
                         email: email, 
+                        phone: phone,
                         password: password 
                     }
                 ]);
@@ -63,7 +64,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
-            // Also keep localStorage backup if needed for local workflow
+            // LocalStorage backup
             const userData = {
                 fullName: fullName,
                 email: email,
