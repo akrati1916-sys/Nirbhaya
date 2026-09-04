@@ -478,6 +478,43 @@
                 document.getElementById('captchaUserInput').value = "";
             }
         }
+
+        // --- NEW KEYBOARD NAVIGATION LOGIC ---
+        
+        const emailField = document.getElementById('email');
+        const passField = document.getElementById('password');
+        const modalInputField = document.getElementById('captchaUserInput');
+
+        // When Enter is pressed in the Email field, jump to Password
+        if (emailField) {
+            emailField.addEventListener('keydown', function (e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault(); 
+                    passField.focus(); 
+                }
+            });
+        }
+
+        // When Enter is pressed in the Password field, trigger the Login function
+        if (passField) {
+            passField.addEventListener('keydown', function (e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault(); 
+                    handleLogin(); 
+                }
+            });
+        }
+
+        // Optional bonus: Allow pressing Enter to verify CAPTCHA inside the modal
+        if (modalInputField) {
+            modalInputField.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    verifyAndLogin();
+                }
+            });
+        }
+
     </script>
 
 </body>
